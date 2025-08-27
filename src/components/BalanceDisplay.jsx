@@ -2,22 +2,58 @@ import React, { useState, useEffect } from 'react';
 import communicationService from '../services/CommunicationService.js';
 
 const BalanceDisplay = ({ position = 'top-right' }) => {
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalance] = useState(1000); // Default balance
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     // Écouter les mises à jour du solde
     const handleBalanceUpdate = (newBalance) => {
-      setBalance(newBalance);
+      try {
+        // Ensure newBalance is a valid number
+        const validBalance = typeof newBalance === 'number' && !isNaN(newBalance) ? newBalance : 1000;
+        setBalance(validBalance);
+      } catch (error) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('Error updating balance:', error);
+        }
+        setBalance(1000); // Fallback to default balance
+      }
     };
 
-    communicationService.on('balanceUpdate', handleBalanceUpdate);
+    try {
+      communicationService.on('balanceUpdate', handleBalanceUpdate);
+      communicationService.on('connected', (connected) => {
+        setIsConnected(connected);
+      });
 
-    // Demander le solde initial
-    communicationService.syncBalance();
+      // Demander le solde initial
+      communicationService.syncBalance();
+      
+      // Set a timeout to show default balance if no response
+      const timeout = setTimeout(() => {
+        if (!isConnected) {
+          setBalance(1000);
+        }
+      }, 3000);
 
-    return () => {
-      communicationService.off('balanceUpdate', handleBalanceUpdate);
-    };
+      return () => {
+        clearTimeout(timeout);
+        try {
+          communicationService.off('balanceUpdate', handleBalanceUpdate);
+          communicationService.off('connected', () => {});
+        } catch (error) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('Error cleaning up balance display:', error);
+          }
+        }
+      };
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Error initializing balance display:', error);
+      }
+      // Set default balance if communication service fails
+      setBalance(1000);
+    }
   }, []);
 
   const getPositionStyles = () => {
@@ -55,7 +91,16 @@ const BalanceDisplay = ({ position = 'top-right' }) => {
 
   return (
     <div style={getPositionStyles()}>
-      <span>💰 {balance.toFixed(0)} FCFA</span>
+      <span>💰 {(balance || 0).toFixed(0)} FCFA</span>
+      {!isConnected && (
+        <span style={{ 
+          fontSize: '10px', 
+          opacity: 0.7, 
+          marginLeft: '5px' 
+        }}>
+          (demo)
+        </span>
+      )}
     </div>
   );
 };

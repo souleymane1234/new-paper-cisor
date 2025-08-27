@@ -28,12 +28,16 @@ const Game = () => {
   // Gestion d'erreur globale et initialisation
   useEffect(() => {
     const handleError = (error) => {
-      console.error('Erreur globale détectée:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Erreur globale détectée:', error);
+      }
       return true; // Empêcher le crash
     };
 
     const handleUnhandledRejection = (event) => {
-      console.error('Promesse rejetée non gérée:', event.reason);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Promesse rejetée non gérée:', event.reason);
+      }
       event.preventDefault(); // Empêcher le crash
     };
 
@@ -50,6 +54,31 @@ const Game = () => {
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
       clearTimeout(timer);
     };
+  }, []);
+
+  // Check communication service availability
+  useEffect(() => {
+    try {
+      const checkCommunication = () => {
+        if (communicationService && typeof communicationService.isGameConnected === 'function') {
+          setIsCommunicationAvailable(true);
+        } else {
+          setIsCommunicationAvailable(false);
+        }
+      };
+
+      checkCommunication();
+      
+      // Check again after a delay
+      const timer = setTimeout(checkCommunication, 2000);
+      
+      return () => clearTimeout(timer);
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Error checking communication service:', error);
+      }
+      setIsCommunicationAvailable(false);
+    }
   }, []);
 
   const [userChoice, setUserChoice] = useState(null);
@@ -70,6 +99,7 @@ const Game = () => {
   const [totalLosses, setTotalLosses] = useState(0);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCommunicationAvailable, setIsCommunicationAvailable] = useState(false);
 
   const choices = useMemo(() => ["rock", "paper", "scissors"], []);
 
@@ -90,10 +120,14 @@ const Game = () => {
       }
       
       audio.play().catch(err => {
-        console.warn('Erreur audio ignorée:', err);
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('Erreur audio ignorée:', err);
+        }
       });
     } catch (error) {
-      console.warn('Erreur lors de la création audio:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Erreur lors de la création audio:', error);
+      }
     }
   }, []);
 

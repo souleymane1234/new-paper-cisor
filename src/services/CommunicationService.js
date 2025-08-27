@@ -9,22 +9,42 @@ class CommunicationService {
   }
 
   init() {
-    // Écouter les messages de la plateforme parente
-    window.addEventListener('message', (event) => {
-      this.handleMessage(event.data);
-    });
+    try {
+      // Écouter les messages de la plateforme parente
+      window.addEventListener('message', (event) => {
+        try {
+          this.handleMessage(event.data);
+        } catch (error) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('Error handling message:', error);
+          }
+        }
+      });
 
-    // Notifier la plateforme que le jeu est prêt
-    this.sendMessage('GAME_READY', {});
-    
-    // Vérifier la connexion périodiquement
-    setInterval(() => {
-      this.sendMessage('PING', {});
-    }, 5000);
+      // Notifier la plateforme que le jeu est prêt
+      this.sendMessage('GAME_READY', {});
+      
+      // Vérifier la connexion périodiquement
+      setInterval(() => {
+        try {
+          this.sendMessage('PING', {});
+        } catch (error) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('Error sending ping:', error);
+          }
+        }
+      }, 5000);
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Error initializing communication service:', error);
+      }
+    }
   }
 
   handleMessage(data) {
-    console.log('Message reçu:', data);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Message reçu:', data);
+    }
 
     switch (data.type) {
       case 'BALANCE_UPDATE':
@@ -57,12 +77,18 @@ class CommunicationService {
   }
 
   sendMessage(type, data) {
-    if (window.parent && window.parent !== window) {
-      window.parent.postMessage({
-        type,
-        data,
-        timestamp: Date.now()
-      }, '*');
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type,
+          data,
+          timestamp: Date.now()
+        }, '*');
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Error sending message:', error);
+      }
     }
   }
 
