@@ -25,7 +25,7 @@ import user_hp_avatar from "../assets/img/user_hp_avatar.svg";
 import cpu_hp_avatar from "../assets/img/cpu_hp_avatar.svg";
 
 const Game = () => {
-  // Gestion d'erreur globale
+  // Gestion d'erreur globale et initialisation
   useEffect(() => {
     const handleError = (error) => {
       console.error('Erreur globale détectée:', error);
@@ -40,9 +40,15 @@ const Game = () => {
     window.addEventListener('error', handleError);
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
+    // Simuler un temps de chargement pour s'assurer que tout est prêt
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
     return () => {
       window.removeEventListener('error', handleError);
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      clearTimeout(timer);
     };
   }, []);
 
@@ -63,6 +69,7 @@ const Game = () => {
   const [totalWins, setTotalWins] = useState(0);
   const [totalLosses, setTotalLosses] = useState(0);
   const [totalEarnings, setTotalEarnings] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const choices = useMemo(() => ["rock", "paper", "scissors"], []);
 
@@ -315,6 +322,55 @@ const Game = () => {
 
   return (
     <>
+      {isLoading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f1419 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            textAlign: 'center',
+            color: 'white'
+          }}>
+            <div style={{
+              fontSize: '48px',
+              marginBottom: '20px',
+              animation: 'pulse 1.5s infinite'
+            }}>
+              ✂️
+            </div>
+            <h2 style={{
+              margin: '0 0 10px 0',
+              fontSize: '24px',
+              fontWeight: 'bold'
+            }}>
+              Chargement...
+            </h2>
+            <div style={{
+              width: '40px',
+              height: '4px',
+              background: 'rgba(255,255,255,0.3)',
+              borderRadius: '2px',
+              margin: '0 auto',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                width: '40px',
+                height: '100%',
+                background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                animation: 'loading 1.5s infinite'
+              }}></div>
+            </div>
+          </div>
+        </div>
+      )}
       <BalanceDisplay position="top-right" />
       {splash && (
         <div className="App">
