@@ -456,7 +456,7 @@ const Game = () => {
                       color: '#ccc',
                       fontSize: '16px'
                     }}>
-                      Placez votre mise et affrontez l'ordinateur !
+                      Placez votre mise et affrontez l'ordinateur.
                     </p>
                     
                     <div style={{
